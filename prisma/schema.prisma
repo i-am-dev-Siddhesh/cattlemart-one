@@ -1,0 +1,540 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Models are PostgreSQL-ready. Local default is SQLite (DATABASE_URL=file:./dev.db).
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  demo      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  users     User[]
+  farms     Farm[]
+}
+
+model User {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  email          String       @unique
+  name           String
+  passwordHash   String
+  role           String       @default("owner")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  memberships    FarmMember[]
+  activities     Activity[]   @relation("ActivityAuthor")
+  expenses       Expense[]    @relation("ExpenseAuthor")
+  tasksAssigned  Task[]       @relation("TaskAssignee")
+  auditLogs      AuditLog[]
+}
+
+model Farm {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  village        String?
+  district       String?
+  state          String?
+  country        String       @default("India")
+  lat            Float?
+  lng            Float?
+  geoJson        String?
+  season         String       @default("Kharif 2026")
+  year           Int          @default(2026)
+  currency       String       @default("INR")
+  areaUnit       String       @default("acre")
+  notes          String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  members        FarmMember[]
+  plots          Plot[]
+  crops          Crop[]
+  inventory      InventoryItem[]
+  workers        Worker[]
+  equipment      Equipment[]
+  vendors        Vendor[]
+  buyers         Buyer[]
+  activities     Activity[]
+  expenses       Expense[]
+  sales          Sale[]
+  tasks          Task[]
+  notifications  Notification[]
+}
+
+model FarmMember {
+  id     String @id @default(cuid())
+  farmId String
+  farm   Farm   @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   String @default("manager")
+
+  @@unique([farmId, userId])
+}
+
+model Plot {
+  id          String   @id @default(cuid())
+  farmId      String
+  farm        Farm     @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  code        String
+  name        String
+  acres       Float
+  status      String   @default("fallow")
+  irrigation  String?
+  soilType    String?
+  geoJson     String?
+  perimeterM  Float?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  cycles      CropCycle[]
+  activities  Activity[]
+  expenses    Expense[]
+  irrigations IrrigationRecord[]
+  pests       PestObservation[]
+  diseases    DiseaseObservation[]
+  observations CropObservation[]
+  soilTests   SoilTest[]
+  harvests    Harvest[]
+  sales       Sale[]
+  tasks       Task[]
+  documents   Document[]
+  labour      LabourRecord[]
+
+  @@unique([farmId, code])
+  @@index([farmId])
+}
+
+model Crop {
+  id       String      @id @default(cuid())
+  farmId   String
+  farm     Farm        @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  name     String
+  localName String?
+  scientificName String?
+  cycles   CropCycle[]
+  varieties CropVariety[]
+}
+
+model CropVariety {
+  id     String @id @default(cuid())
+  cropId String
+  crop   Crop   @relation(fields: [cropId], references: [id], onDelete: Cascade)
+  name   String
+  hybrid Boolean @default(false)
+  cycles CropCycle[]
+}
+
+model CropCycle {
+  id                 String   @id @default(cuid())
+  plotId             String
+  plot               Plot     @relation(fields: [plotId], references: [id], onDelete: Cascade)
+  cropId             String
+  crop               Crop     @relation(fields: [cropId], references: [id], onDelete: Cascade)
+  varietyId          String?
+  variety            CropVariety? @relation(fields: [varietyId], references: [id])
+  season             String
+  year               Int
+  status             String   @default("planned")
+  localName          String?
+  seedSource         String?
+  seedSupplier       String?
+  seedLot            String?
+  startDate          DateTime?
+  endDate            DateTime?
+  plantingDate       DateTime?
+  transplantingDate  DateTime?
+  expectedHarvest    DateTime?
+  actualHarvest      DateTime?
+  plantingMethod     String?
+  seedRate           String?
+  plantSpacing       String?
+  rowSpacing         String?
+  irrigationMethod   String?
+  notes              String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  activities         Activity[]
+  expenses           Expense[]
+  irrigations        IrrigationRecord[]
+  pests              PestObservation[]
+  diseases           DiseaseObservation[]
+  observations       CropObservation[]
+  harvests           Harvest[]
+  sales              Sale[]
+  fertilizerApps     FertilizerApplication[]
+  protectionApps     CropProtectionApplication[]
+  labour             LabourRecord[]
+
+  @@index([plotId, year])
+}
+
+model Vendor {
+  id       String    @id @default(cuid())
+  farmId   String
+  farm     Farm      @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  name     String
+  expenses Expense[]
+}
+
+model Buyer {
+  id    String @id @default(cuid())
+  farmId String
+  farm  Farm   @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  name  String
+  sales Sale[]
+}
+
+model InventoryItem {
+  id           String                 @id @default(cuid())
+  farmId       String
+  farm         Farm                   @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  name         String
+  kind         String
+  unit         String
+  brand        String?
+  nPct         Float?
+  pPct         Float?
+  kPct         Float?
+  qtyOnHand    Float                  @default(0)
+  unitCost     Float?
+  transactions InventoryTransaction[]
+}
+
+model InventoryTransaction {
+  id          String        @id @default(cuid())
+  itemId      String
+  item        InventoryItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  activityId  String?
+  activity    Activity?     @relation(fields: [activityId], references: [id])
+  type        String
+  qty         Float
+  previousQty Float
+  remainingQty Float
+  reason      String?
+  createdAt   DateTime      @default(now())
+  createdById String?
+}
+
+model Activity {
+  id          String   @id @default(cuid())
+  farmId      String
+  farm        Farm     @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  plotId      String
+  plot        Plot     @relation(fields: [plotId], references: [id], onDelete: Cascade)
+  cropCycleId String?
+  cropCycle   CropCycle? @relation(fields: [cropCycleId], references: [id])
+  type        String
+  date        DateTime
+  description String?
+  notes       String?
+  labourCost  Float    @default(0)
+  machineCost Float    @default(0)
+  inputCost   Float    @default(0)
+  totalCost   Float    @default(0)
+  status      String   @default("recorded")
+  createdById String?
+  createdBy   User?    @relation("ActivityAuthor", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  expenses    Expense[]
+  inventoryTx InventoryTransaction[]
+  labour      LabourRecord[]
+  fertilizer  FertilizerApplication[]
+  protection  CropProtectionApplication[]
+  irrigations IrrigationRecord[]
+}
+
+model Expense {
+  id          String     @id @default(cuid())
+  farmId      String
+  farm        Farm       @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  plotId      String?
+  plot        Plot?      @relation(fields: [plotId], references: [id])
+  cropCycleId String?
+  cropCycle   CropCycle? @relation(fields: [cropCycleId], references: [id])
+  activityId  String?
+  activity    Activity?  @relation(fields: [activityId], references: [id])
+  vendorId    String?
+  vendor      Vendor?    @relation(fields: [vendorId], references: [id])
+  category    String
+  date        DateTime
+  quantity    Float?
+  unit        String?
+  unitPrice   Float?
+  amount      Float
+  paymentStatus String   @default("paid")
+  paymentMethod String?
+  notes       String?
+  voided      Boolean    @default(false)
+  createdById String?
+  createdBy   User?      @relation("ExpenseAuthor", fields: [createdById], references: [id])
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([farmId, date])
+  @@index([plotId])
+}
+
+model FertilizerApplication {
+  id          String     @id @default(cuid())
+  cropCycleId String
+  cropCycle   CropCycle  @relation(fields: [cropCycleId], references: [id], onDelete: Cascade)
+  activityId  String?
+  activity    Activity?  @relation(fields: [activityId], references: [id])
+  product     String
+  quantity    Float
+  unit        String
+  method      String?
+  nKg         Float?
+  pKg         Float?
+  kKg         Float?
+  date        DateTime
+}
+
+model CropProtectionApplication {
+  id          String    @id @default(cuid())
+  cropCycleId String
+  cropCycle   CropCycle @relation(fields: [cropCycleId], references: [id], onDelete: Cascade)
+  activityId  String?
+  activity    Activity? @relation(fields: [activityId], references: [id])
+  product     String
+  quantity    Float
+  unit        String
+  target      String?
+  date        DateTime
+}
+
+model IrrigationRecord {
+  id          String     @id @default(cuid())
+  plotId      String
+  plot        Plot       @relation(fields: [plotId], references: [id], onDelete: Cascade)
+  cropCycleId String?
+  cropCycle   CropCycle? @relation(fields: [cropCycleId], references: [id])
+  activityId  String?
+  activity    Activity?  @relation(fields: [activityId], references: [id])
+  date        DateTime
+  method      String?
+  quantityL   Float?
+  source      String?
+  cost        Float?
+  notes       String?
+}
+
+model CropObservation {
+  id          String     @id @default(cuid())
+  plotId      String
+  plot        Plot       @relation(fields: [plotId], references: [id], onDelete: Cascade)
+  cropCycleId String?
+  cropCycle   CropCycle? @relation(fields: [cropCycleId], references: [id])
+  date        DateTime
+  severity    String
+  note        String
+  photoUrl    String?
+}
+
+model PestObservation {
+  id          String     @id @default(cuid())
+  plotId      String
+  plot        Plot       @relation(fields: [plotId], references: [id], onDelete: Cascade)
+  cropCycleId String?
+  cropCycle   CropCycle? @relation(fields: [cropCycleId], references: [id])
+  date        DateTime
+  pest        String
+  severity    String
+  affectedPct Float?
+  treatment   String?
+  notes       String?
+}
+
+model DiseaseObservation {
+  id          String     @id @default(cuid())
+  plotId      String
+  plot        Plot       @relation(fields: [plotId], references: [id], onDelete: Cascade)
+  cropCycleId String?
+  cropCycle   CropCycle? @relation(fields: [cropCycleId], references: [id])
+  date        DateTime
+  disease     String
+  severity    String
+  symptoms    String?
+  treatment   String?
+  notes       String?
+}
+
+model SoilTest {
+  id        String   @id @default(cuid())
+  plotId    String
+  plot      Plot     @relation(fields: [plotId], references: [id], onDelete: Cascade)
+  date      DateTime
+  lab       String?
+  ph        Float?
+  oc        Float?
+  n         Float?
+  p         Float?
+  k         Float?
+  notes     String?
+  reportUrl String?
+}
+
+model Worker {
+  id     String         @id @default(cuid())
+  farmId String
+  farm   Farm           @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  name   String
+  wage   Float?
+  wageUnit String       @default("day")
+  labour LabourRecord[]
+}
+
+model LabourRecord {
+  id          String     @id @default(cuid())
+  plotId      String?
+  plot        Plot?      @relation(fields: [plotId], references: [id])
+  cropCycleId String?
+  cropCycle   CropCycle? @relation(fields: [cropCycleId], references: [id])
+  activityId  String?
+  activity    Activity?  @relation(fields: [activityId], references: [id])
+  workerId    String?
+  worker      Worker?    @relation(fields: [workerId], references: [id])
+  date        DateTime
+  workers     Int
+  hours       Float?
+  cost        Float
+}
+
+model Equipment {
+  id      String           @id @default(cuid())
+  farmId  String
+  farm    Farm             @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  name    String
+  kind    String
+  usage   EquipmentUsage[]
+  maint   EquipmentMaintenance[]
+}
+
+model EquipmentUsage {
+  id          String    @id @default(cuid())
+  equipmentId String
+  equipment   Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  date        DateTime
+  hours       Float
+  fuelL       Float?
+  cost        Float?
+}
+
+model EquipmentMaintenance {
+  id          String    @id @default(cuid())
+  equipmentId String
+  equipment   Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  date        DateTime
+  note        String
+  cost        Float?
+}
+
+model Harvest {
+  id          String         @id @default(cuid())
+  plotId      String
+  plot        Plot           @relation(fields: [plotId], references: [id], onDelete: Cascade)
+  cropCycleId String
+  cropCycle   CropCycle      @relation(fields: [cropCycleId], references: [id], onDelete: Cascade)
+  date        DateTime
+  quantity    Float
+  unit        String
+  grade       String?
+  damagedQty  Float?
+  marketableQty Float?
+  notes       String?
+  batches     HarvestBatch[]
+  sales       Sale[]
+}
+
+model HarvestBatch {
+  id        String  @id @default(cuid())
+  harvestId String
+  harvest   Harvest @relation(fields: [harvestId], references: [id], onDelete: Cascade)
+  code      String
+  quantity  Float
+  unit      String
+  storage   String?
+}
+
+model Sale {
+  id          String   @id @default(cuid())
+  farmId      String
+  farm        Farm     @relation(fields: [farmId], references: [id])
+  plotId      String?
+  plot        Plot?    @relation(fields: [plotId], references: [id])
+  cropCycleId String?
+  cropCycle   CropCycle? @relation(fields: [cropCycleId], references: [id])
+  harvestId   String?
+  harvest     Harvest? @relation(fields: [harvestId], references: [id])
+  buyerId     String?
+  buyer       Buyer?   @relation(fields: [buyerId], references: [id])
+  date        DateTime
+  quantity    Float
+  unit        String
+  unitPrice   Float
+  gross       Float
+  deductions  Float    @default(0)
+  net         Float
+  paymentStatus String @default("pending")
+  notes       String?
+}
+
+model Task {
+  id          String    @id @default(cuid())
+  farmId      String
+  farm        Farm      @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  plotId      String?
+  plot        Plot?     @relation(fields: [plotId], references: [id])
+  assigneeId  String?
+  assignee    User?     @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  title       String
+  dueDate     DateTime?
+  priority    String    @default("normal")
+  status      String    @default("planned")
+  notes       String?
+  createdAt   DateTime  @default(now())
+}
+
+model Document {
+  id        String   @id @default(cuid())
+  plotId    String?
+  plot      Plot?    @relation(fields: [plotId], references: [id])
+  title     String
+  url       String
+  kind      String
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  farmId    String
+  farm      Farm     @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  title     String
+  body      String
+  kind      String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
+  action      String
+  entity      String
+  entityId    String
+  previous    String?
+  next        String?
+  reason      String?
+  createdAt   DateTime @default(now())
+}

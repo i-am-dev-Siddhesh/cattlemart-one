@@ -1,0 +1,13 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: farmos
+      POSTGRES_PASSWORD: farmos
+      POSTGRES_DB: farmos
+    ports:
+      - "5432:5432"
+    volumes:
+      - farmos_pg:/var/lib/postgresql/data
+volumes:
+  farmos_pg:

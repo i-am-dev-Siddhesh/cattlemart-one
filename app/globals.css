@@ -1,0 +1,158 @@
+@import 'tailwindcss';
+@import 'leaflet/dist/leaflet.css';
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+  --color-destructive: var(--destructive);
+  --font-sans: var(--font-sans);
+}
+
+:root {
+  --bg: #f6f9fc;
+  --ink: #0a2540;
+  --muted: #6b7c93;
+  --line: #e6ebf1;
+  --card: #ffffff;
+  --accent: #635bff;
+  --accent-soft: #eeedff;
+  --background: #f6f9fc;
+  --foreground: #0a2540;
+  --primary: #635bff;
+  --primary-foreground: #ffffff;
+  --secondary: #eef2f7;
+  --secondary-foreground: #0a2540;
+  --muted-foreground: #6b7c93;
+  --destructive: #df1b41;
+  --border: #e6ebf1;
+  --input: #e6ebf1;
+  --ring: #635bff;
+  --radius: 0.75rem;
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--ink);
+}
+
+body {
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.surface {
+  background: #fff;
+  border: 1px solid var(--border);
+  box-shadow: 0 2px 6px rgba(15, 34, 67, 0.04);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.control {
+  height: 42px;
+  width: 100%;
+  border: 1px solid #d6dde6;
+  border-radius: 10px;
+  background: #fff;
+  padding: 0 12px;
+  font-size: 14px;
+  color: #0a2540;
+  box-shadow: 0 1px 1px rgba(10, 37, 64, 0.04);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.control::placeholder {
+  color: #9aa8b8;
+}
+
+.control:hover {
+  border-color: #c1cad6;
+}
+
+.control:focus,
+.control:focus-visible {
+  outline: none;
+  border-color: #635bff;
+  box-shadow: 0 0 0 4px rgba(99, 91, 255, 0.16);
+}
+
+select.control {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7c93' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+}
+
+*:focus-visible {
+  outline: 2px solid #635bff;
+  outline-offset: 2px;
+}
+
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  min-height: 320px;
+  font-family: inherit;
+  background: #e8eef5;
+  z-index: 0;
+}
+
+.leaflet-container img.leaflet-tile {
+  max-width: none !important;
+  max-height: none !important;
+}
+
+.leaflet-div-icon.farm-vertex-handle,
+.leaflet-div-icon.farm-edge-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #fff;
+  pointer-events: none;
+  font-family: inherit;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.leaflet-div-icon.farm-vertex-handle {
+  width: 22px;
+  height: 22px;
+  border: 2px solid #0a2540;
+  color: #0a2540;
+  font-size: 11px;
+  box-shadow: 0 0 0 3px rgba(10, 37, 64, 0.18);
+}
+
+.leaflet-div-icon.farm-edge-handle {
+  width: 16px;
+  height: 16px;
+  border: 1.5px dashed #0a2540;
+  color: #0a2540;
+  font-size: 12px;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85);
+}
+
+.farm-grid {
+  background-color: #f0f4f8;
+  background-image: radial-gradient(#c9d4e0 1px, transparent 1px);
+  background-size: 16px 16px;
+}
