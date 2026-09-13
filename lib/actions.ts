@@ -21,7 +21,8 @@ import { parseCycleRange } from '@/lib/cycle-span'
 import { parseDay, seasonWindow, weatherSeason } from '@/lib/farm-season'
 import { selectFarmAction } from '@/lib/farm-cookie'
 import { isPoiName, reversePlace, searchPlace } from '@/lib/geocode'
-import { isNextNavigationError, userFacingActionError } from '@/lib/utils'
+import { runAction } from '@/lib/action-result'
+import { isNextNavigationError } from '@/lib/utils'
 import {
   assertLoginAllowed,
   assertMoney,
@@ -37,7 +38,7 @@ async function actor() {
   return requireSession()
 }
 
-export async function loginAction(formData: FormData) {
+export async function loginAction(formData: FormData) { return runAction(async () => {
   const email = normalizeEmail(String(formData.get('email') ?? ''))
   try {
     assertLoginAllowed(email)
@@ -52,13 +53,13 @@ export async function loginAction(formData: FormData) {
       clearLoginHits(email)
       throw err
     }
-    throw new Error(userFacingActionError(err))
+    throw err
   }
-}
+})}
 
-export async function logoutAction() {
+export async function logoutAction() { return runAction(async () => {
   await signOut({ redirectTo: '/login' })
-}
+})}
 
 const activitySchema = z.object({
   farmId: z.string(),
@@ -74,7 +75,7 @@ const activitySchema = z.object({
   expenseCategory: z.string().optional(),
 })
 
-export async function createActivityAction(input: z.infer<typeof activitySchema>) {
+export async function createActivityAction(input: z.infer<typeof activitySchema>) { return runAction(async () => {
   const parsed = activitySchema.parse(input)
   const { user } = await requirePlot(parsed.farmId, parsed.plotId, 'write')
   assertOptionalMoney(parsed.inputCost, 'Input cost')
@@ -85,7 +86,7 @@ export async function createActivityAction(input: z.infer<typeof activitySchema>
     userId: user.id,
   })
   revalidatePath('/app', 'layout')
-}
+})}
 
 export async function createExpenseAction(input: {
   farmId: string
@@ -96,7 +97,7 @@ export async function createExpenseAction(input: {
   quantity?: number
   unit?: string
   notes?: string
-}) {
+}) { return runAction(async () => {
   const { user } = await requirePlot(input.farmId, input.plotId, 'write')
   assertMoney(input.amount)
   assertOptionalMoney(input.quantity, 'Quantity')
@@ -112,9 +113,9 @@ export async function createExpenseAction(input: {
     userId: user.id,
   })
   revalidatePath('/app', 'layout')
-}
+})}
 
-export async function deleteExpenseAction(input: { farmId: string; expenseId: string }) {
+export async function deleteExpenseAction(input: { farmId: string; expenseId: string }) { return runAction(async () => {
   const { user } = await requireFarm(input.farmId, 'write')
   const expense = await prisma.expense.findFirst({
     where: { id: input.expenseId, farmId: input.farmId, voided: false },
@@ -123,9 +124,9 @@ export async function deleteExpenseAction(input: { farmId: string; expenseId: st
   if (!expense) throw new Error('Expense not found or already deleted.')
   await voidExpense(expense.id, user.id, 'Deleted from expense ledger')
   revalidatePath('/app', 'layout')
-}
+})}
 
-export async function deleteExpensesAction(input: { farmId: string; expenseIds: string[] }) {
+export async function deleteExpensesAction(input: { farmId: string; expenseIds: string[] }) { return runAction(async () => {
   const { user } = await requireFarm(input.farmId, 'write')
   const ids = [...new Set(input.expenseIds)].filter(Boolean)
   if (!ids.length) throw new Error('No expenses selected.')
@@ -153,7 +154,7 @@ export async function deleteExpensesAction(input: { farmId: string; expenseIds: 
     }),
   ])
   revalidatePath('/app', 'layout')
-}
+})}
 
 export async function createPlotAction(input: {
   farmId: string
@@ -166,7 +167,7 @@ export async function createPlotAction(input: {
   leaveUnplanted?: boolean
   startDate?: string
   endDate?: string
-}) {
+}) { return runAction(async () => {
   const { farm } = await requireFarm(input.farmId, 'write')
   if (input.ring.length < 3) throw new Error('Draw a plot boundary with at least 3 points.')
   const siblings = await prisma.plot.findMany({
@@ -228,7 +229,7 @@ export async function createPlotAction(input: {
   }
   revalidatePath('/app', 'layout')
   return plot.id
-}
+})}
 
 export async function updatePlotShapeAction(input: {
   farmId: string
@@ -239,7 +240,7 @@ export async function updatePlotShapeAction(input: {
   irrigation?: string
   soilType?: string
   status?: string
-}) {
+}) { return runAction(async () => {
   const { farm } = await requirePlot(input.farmId, input.plotId, 'write')
   if (input.ring.length < 3) throw new Error('A plot needs at least 3 corners.')
   const farmRing = parseRingJson(farm.geoJson)
@@ -272,9 +273,9 @@ export async function updatePlotShapeAction(input: {
     },
   })
   revalidatePath('/app', 'layout')
-}
+})}
 
-export async function deletePlotAction(input: { farmId: string; plotId: string }) {
+export async function deletePlotAction(input: { farmId: string; plotId: string }) { return runAction(async () => {
   await requirePlot(input.farmId, input.plotId, 'manage')
   const cycles = await prisma.cropCycle.findMany({ where: { plotId: input.plotId }, select: { id: true } })
   const cycleIds = cycles.map((c) => c.id)
@@ -306,7 +307,7 @@ export async function deletePlotAction(input: { farmId: string; plotId: string }
     await tx.plot.delete({ where: { id: input.plotId } })
   })
   revalidatePath('/app', 'layout')
-}
+})}
 
 export async function plantNewCycleAction(input: {
   farmId: string
@@ -314,7 +315,7 @@ export async function plantNewCycleAction(input: {
   cropId: string
   startDate: string
   endDate: string
-}) {
+}) { return runAction(async () => {
   await requirePlot(input.farmId, input.plotId, 'write')
   const crop = await prisma.crop.findFirst({ where: { id: input.cropId, farmId: input.farmId } })
   if (!crop) throw new Error('That crop does not belong to this farm.')
@@ -351,7 +352,7 @@ export async function plantNewCycleAction(input: {
     }),
   ])
   revalidatePath('/app', 'layout')
-}
+})}
 
 function cleanCropName(value: string) {
   return value.trim().replace(/\s+/g, ' ')
@@ -371,7 +372,7 @@ export async function createCropAction(input: {
   name: string
   localName?: string
   scientificName?: string
-}) {
+}) { return runAction(async () => {
   const { farm } = await requireFarm(input.farmId, 'write')
   const name = cleanCropName(input.name)
   if (!name) throw new Error('Crop name is required.')
@@ -386,7 +387,7 @@ export async function createCropAction(input: {
   })
   revalidatePath('/app', 'layout')
   return { id: crop.id, name: crop.name, localName: crop.localName, scientificName: crop.scientificName }
-}
+})}
 
 export async function updateCropAction(input: {
   farmId: string
@@ -394,7 +395,7 @@ export async function updateCropAction(input: {
   name: string
   localName?: string
   scientificName?: string
-}) {
+}) { return runAction(async () => {
   const { farm } = await requireFarm(input.farmId, 'write')
   const crop = await prisma.crop.findFirst({ where: { id: input.cropId, farmId: farm.id } })
   if (!crop) throw new Error('That crop was not found on this farm.')
@@ -410,9 +411,9 @@ export async function updateCropAction(input: {
     },
   })
   revalidatePath('/app', 'layout')
-}
+})}
 
-export async function deleteCropAction(input: { farmId: string; cropId: string }) {
+export async function deleteCropAction(input: { farmId: string; cropId: string }) { return runAction(async () => {
   const { farm } = await requireFarm(input.farmId, 'manage')
   const crop = await prisma.crop.findFirst({
     where: { id: input.cropId, farmId: farm.id },
@@ -426,7 +427,7 @@ export async function deleteCropAction(input: { farmId: string; cropId: string }
   }
   await prisma.crop.delete({ where: { id: crop.id } })
   revalidatePath('/app', 'layout')
-}
+})}
 
 export async function createTaskAction(input: {
   farmId: string
@@ -434,7 +435,7 @@ export async function createTaskAction(input: {
   title: string
   dueDate?: string
   priority?: string
-}) {
+}) { return runAction(async () => {
   await requireFarm(input.farmId, 'write')
   if (input.plotId) await requirePlot(input.farmId, input.plotId, 'write')
   const title = input.title.trim()
@@ -449,9 +450,9 @@ export async function createTaskAction(input: {
     },
   })
   revalidatePath('/app', 'layout')
-}
+})}
 
-export async function completeTaskAsActivityAction(taskId: string, activityType: string) {
+export async function completeTaskAsActivityAction(taskId: string, activityType: string) { return runAction(async () => {
   const user = await actor()
   const task = await prisma.task.findFirst({ where: { id: taskId } })
   if (!task) throw new Error('Task not found.')
@@ -468,7 +469,7 @@ export async function completeTaskAsActivityAction(taskId: string, activityType:
   })
   await prisma.task.update({ where: { id: taskId }, data: { status: 'completed' } })
   revalidatePath('/app', 'layout')
-}
+})}
 
 export async function createObservationAction(input: {
   farmId: string
@@ -478,7 +479,7 @@ export async function createObservationAction(input: {
   note: string
   name?: string
   severity: string
-}) {
+}) { return runAction(async () => {
   await requirePlot(input.farmId, input.plotId, 'write')
   const cycle = await prisma.cropCycle.findFirst({
     where: { plotId: input.plotId, status: { notIn: ['completed', 'failed', 'abandoned'] } },
@@ -518,7 +519,7 @@ export async function createObservationAction(input: {
     })
   }
   revalidatePath('/app', 'layout')
-}
+})}
 
 export async function createIrrigationAction(input: {
   farmId: string
@@ -527,7 +528,7 @@ export async function createIrrigationAction(input: {
   method?: string
   quantityL?: number
   cost?: number
-}) {
+}) { return runAction(async () => {
   const { user } = await requirePlot(input.farmId, input.plotId, 'write')
   assertOptionalMoney(input.cost, 'Irrigation cost')
   const cycle = await prisma.cropCycle.findFirst({
@@ -557,7 +558,7 @@ export async function createIrrigationAction(input: {
     },
   })
   revalidatePath('/app', 'layout')
-}
+})}
 
 export async function createHarvestAction(input: {
   farmId: string
@@ -565,7 +566,7 @@ export async function createHarvestAction(input: {
   date: string
   quantity: number
   unit: string
-}) {
+}) { return runAction(async () => {
   await requirePlot(input.farmId, input.plotId, 'write')
   assertQuantity(input.quantity)
   const cycle = await prisma.cropCycle.findFirst({
@@ -583,7 +584,7 @@ export async function createHarvestAction(input: {
     },
   })
   revalidatePath('/app', 'layout')
-}
+})}
 
 export async function createSaleAction(input: {
   farmId: string
@@ -594,7 +595,7 @@ export async function createSaleAction(input: {
   unit: string
   unitPrice: number
   notes?: string
-}) {
+}) { return runAction(async () => {
   await requirePlot(input.farmId, input.plotId, 'write')
   assertQuantity(input.quantity)
   assertMoney(input.unitPrice, 'Unit price')
@@ -630,16 +631,16 @@ export async function createSaleAction(input: {
     },
   })
   revalidatePath('/app', 'layout')
-}
+})}
 
-export async function assistantConfirmAction(farmId: string, raw: string) {
+export async function assistantConfirmAction(farmId: string, raw: string) { return runAction(async () => {
   const { user } = await requireFarm(farmId, 'write')
   const text = raw.trim().slice(0, 500)
   if (!text) throw new Error('Type a farm record or question first.')
   const result = await confirmParsed(farmId, user.id, text)
   revalidatePath('/app', 'layout')
   return result
-}
+})}
 
 export async function setFarmLocationAction(input: {
   farmId: string
@@ -647,7 +648,7 @@ export async function setFarmLocationAction(input: {
   lng: number
   label?: string
   ring: LatLng[]
-}) {
+}) { return runAction(async () => {
   const { farm } = await requireFarm(input.farmId, 'write')
   if (input.ring.length < 3) throw new Error('A farm boundary needs at least 3 corners.')
   const plots = await prisma.plot.findMany({
@@ -675,7 +676,7 @@ export async function setFarmLocationAction(input: {
     },
   })
   revalidatePath('/app', 'layout')
-}
+})}
 
 export async function createFarmAction(input: {
   name: string
@@ -683,7 +684,7 @@ export async function createFarmAction(input: {
   season?: string
   startDate?: string
   endDate?: string
-}) {
+}) { return runAction(async () => {
   const user = await actor()
   if (!canWriteRole(user.role)) throw new Error('You can view this workspace but cannot add a farm.')
   const kind = weatherSeason(input.season)
@@ -715,14 +716,14 @@ export async function createFarmAction(input: {
   await selectFarmAction(farm.id)
   revalidatePath('/app', 'layout')
   return farm.id
-}
+})}
 
 const profileSchema = z.object({
   name: z.string().trim().min(2, 'Name needs at least 2 letters.'),
   email: z.string().trim().toLowerCase().email('That email does not look right.'),
 })
 
-export async function updateProfileAction(input: { name: string; email: string }) {
+export async function updateProfileAction(input: { name: string; email: string }) { return runAction(async () => {
   const me = await requireSession()
   const parsed = profileSchema.parse(input)
   const taken = await prisma.user.findFirst({
@@ -735,13 +736,13 @@ export async function updateProfileAction(input: { name: string; email: string }
     data: { name: parsed.name, email: parsed.email },
   })
   revalidatePath('/app', 'layout')
-}
+})}
 
 export async function changePasswordAction(input: {
   currentPassword: string
   newPassword: string
   confirmPassword: string
-}) {
+}) { return runAction(async () => {
   const me = await requireSession()
   assertPasswordStrength(input.newPassword)
   if (input.newPassword !== input.confirmPassword) throw new Error('The two new passwords do not match.')
@@ -762,22 +763,22 @@ export async function changePasswordAction(input: {
       authEpoch: user.authEpoch + 1,
     },
   })
-}
+})}
 
-export async function updateFarmNameAction(input: { farmId: string; name: string }) {
+export async function updateFarmNameAction(input: { farmId: string; name: string }) { return runAction(async () => {
   const name = input.name.trim()
   if (!name) throw new Error('Farm name is required.')
   await requireFarm(input.farmId, 'write')
   await prisma.farm.update({ where: { id: input.farmId }, data: { name } })
   revalidatePath('/app', 'layout')
-}
+})}
 
 export async function updateFarmSeasonAction(input: {
   farmId: string
   season: string
   startDate: string
   endDate: string
-}) {
+}) { return runAction(async () => {
   await requireFarm(input.farmId, 'write')
   const kind = weatherSeason(input.season)
   const start = parseDay(input.startDate)
@@ -793,7 +794,7 @@ export async function updateFarmSeasonAction(input: {
     },
   })
   revalidatePath('/app', 'layout')
-}
+})}
 
 export async function updatePlotAction(input: {
   farmId: string
@@ -802,7 +803,7 @@ export async function updatePlotAction(input: {
   code: string
   acres: number
   status: string
-}) {
+}) { return runAction(async () => {
   await requirePlot(input.farmId, input.plotId, 'write')
   const taken = await prisma.plot.findFirst({
     where: { farmId: input.farmId, code: input.code, id: { not: input.plotId } },
@@ -818,13 +819,13 @@ export async function updatePlotAction(input: {
     },
   })
   revalidatePath('/app', 'layout')
-}
+})}
 
 export async function createSimplePlotAction(_input: {
   farmId: string
   name: string
   code: string
   acres: number
-}) {
+}) { return runAction(async () => {
   throw new Error('Draw the plot boundary on this farm’s map. A plot belongs to one farm only.')
-}
+})}

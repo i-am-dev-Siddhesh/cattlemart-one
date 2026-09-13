@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useMemo, useState, type Compone
 import { useFormStatus } from 'react-dom'
 import { Check, Loader2, TriangleAlert } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { actionFailureMessage, type ActionFailure } from '@/lib/action-result'
 import { cn, isNextNavigationError, userFacingActionError } from '@/lib/utils'
 
 type Toast = { id: number; kind: 'ok' | 'err'; text: string }
@@ -11,7 +12,7 @@ type Result<T> = { ok: true; data: T } | { ok: false }
 
 type Feedback = {
   busy: boolean
-  run: <T>(work: () => Promise<T>, opts?: { ok?: string }) => Promise<Result<T>>
+  run: <T>(work: () => Promise<T>, opts?: { ok?: string }) => Promise<Result<Exclude<T, ActionFailure>>>
 }
 
 const Ctx = createContext<Feedback | null>(null)
@@ -29,12 +30,17 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const run = useCallback(
-    async <T,>(work: () => Promise<T>, opts?: { ok?: string }): Promise<Result<T>> => {
+    async <T,>(work: () => Promise<T>, opts?: { ok?: string }): Promise<Result<Exclude<T, ActionFailure>>> => {
       setBusy((n) => n + 1)
       try {
         const data = await work()
+        const failure = actionFailureMessage(data)
+        if (failure) {
+          push('err', failure)
+          return { ok: false }
+        }
         push('ok', opts?.ok ?? 'Saved')
-        return { ok: true, data }
+        return { ok: true, data: data as Exclude<T, ActionFailure> }
       } catch (err) {
         if (isNextNavigationError(err)) throw err
         push('err', userFacingActionError(err))
