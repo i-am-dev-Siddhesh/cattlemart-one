@@ -3,7 +3,7 @@ import { format } from 'date-fns'
 import { currentFarm } from '@/lib/context'
 import { prisma } from '@/lib/prisma'
 import { completeTaskAsActivityAction } from '@/lib/actions'
-import { Button } from '@/components/ui/button'
+import { ActionForm, SubmitButton } from '@/components/feedback'
 import { Card } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/empty'
 import { Table, Td, Th } from '@/components/ui/table'
@@ -163,16 +163,17 @@ export async function FarmList({ kind }: { kind: string }) {
                 <Td className="capitalize">{t.status.replaceAll('_', ' ')}</Td>
                 <Td>
                   {t.status !== 'completed' ? (
-                    <form
+                    <ActionForm
+                      ok="Task marked done"
                       action={async () => {
                         'use server'
                         await completeTaskAsActivityAction(t.id, 'Other')
                       }}
                     >
-                      <Button size="sm" variant="outline">
+                      <SubmitButton size="sm" variant="outline" pendingLabel="Saving…">
                         Complete as activity
-                      </Button>
-                    </form>
+                      </SubmitButton>
+                    </ActionForm>
                   ) : null}
                 </Td>
               </tr>
@@ -376,14 +377,6 @@ export async function FarmList({ kind }: { kind: string }) {
       </Shell>
     )
   }
-  if (kind === 'weather') {
-    return (
-      <Shell title="Weather">
-        <EmptyState title="Weather API not configured" body="Add a weather key in Settings → Integrations. Until then nothing is shown as fact." />
-      </Shell>
-    )
-  }
-
   const packed = await simple()
   if (packed) {
     return (

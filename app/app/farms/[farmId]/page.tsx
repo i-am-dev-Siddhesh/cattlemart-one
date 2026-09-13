@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Metric } from '@/components/ui/empty'
 import { PageHeader } from '@/components/PageHeader'
+import { FarmRename } from '@/components/FarmRename'
+import { farmSeasonLine } from '@/lib/farm-season'
 import { acres, inr } from '@/lib/utils'
 
 export default async function FarmHome({ params }: { params: Promise<{ farmId: string }> }) {
@@ -16,8 +18,13 @@ export default async function FarmHome({ params }: { params: Promise<{ farmId: s
   return (
     <div className="space-y-5">
       <PageHeader
-        title={d.farm.name}
-        hint="Farm book"
+        title={
+          <span className="inline-flex items-center gap-2">
+            {d.farm.name}
+            <FarmRename farmId={farmId} name={d.farm.name} />
+          </span>
+        }
+        hint={farmSeasonLine(d.farm)}
         action={
           <div className="flex gap-2">
             <Button asChild variant="outline">

@@ -7,7 +7,10 @@ import { PageHeader } from '@/components/PageHeader'
 export default async function TeamPage() {
   const ctx = await currentFarm()
   const users = ctx
-    ? await prisma.user.findMany({ where: { organizationId: ctx.session.user.organizationId } })
+    ? await prisma.user.findMany({
+        where: { organizationId: ctx.session.user.organizationId },
+        select: { id: true, name: true, email: true, role: true },
+      })
     : []
   return (
     <div className="space-y-4">

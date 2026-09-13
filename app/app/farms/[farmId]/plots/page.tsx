@@ -8,6 +8,7 @@ import { EmptyState } from '@/components/ui/empty'
 import { Table, Td, Th } from '@/components/ui/table'
 import { PageHeader } from '@/components/PageHeader'
 import { acres, inr } from '@/lib/utils'
+import { PlotActions } from '@/components/PlotActions'
 
 export default async function FarmPlots({ params }: { params: Promise<{ farmId: string }> }) {
   const { farmId } = await params
@@ -41,6 +42,7 @@ export default async function FarmPlots({ params }: { params: Promise<{ farmId: 
                 <Th className="text-right">Cost</Th>
                 <Th className="text-right">Revenue</Th>
                 <Th className="text-right">Profit</Th>
+                <Th className="w-[1%] whitespace-nowrap">Actions</Th>
               </tr>
             </thead>
             <tbody>
@@ -57,6 +59,9 @@ export default async function FarmPlots({ params }: { params: Promise<{ farmId: 
                   <Td className="num text-right">{inr(m.expenses)}</Td>
                   <Td className="num text-right">{inr(m.revenue)}</Td>
                   <Td className="num text-right">{inr(m.profit)}</Td>
+                  <Td>
+                    <PlotActions farmId={farmId} plotId={p.id} plotName={p.name} after="plots" compact />
+                  </Td>
                 </tr>
               ))}
             </tbody>

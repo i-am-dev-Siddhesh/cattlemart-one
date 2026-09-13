@@ -33,7 +33,8 @@ export function GlobalSearch({ farmId }: { farmId: string }) {
         value={q}
         onChange={(e) => setQ(e.target.value)}
         placeholder="Search plots, crops, activities…"
-        className="control"
+        type="search"
+        className="control control-search"
       />
       {data ? (
         <div className="absolute z-30 mt-1 w-full rounded-xl border border-border bg-white p-3 text-sm shadow-lg">

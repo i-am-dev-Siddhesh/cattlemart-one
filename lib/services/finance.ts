@@ -102,6 +102,43 @@ export async function monthFinance(farmId: string, year: number, month: number) 
   }
 }
 
+export async function monthlyMoney(farmId: string, months = 6) {
+  const start = new Date()
+  start.setHours(0, 0, 0, 0)
+  start.setDate(1)
+  start.setMonth(start.getMonth() - (months - 1))
+
+  const [expenses, sales] = await Promise.all([
+    prisma.expense.findMany({
+      where: { farmId, voided: false, date: { gte: start } },
+      select: { date: true, amount: true },
+    }),
+    prisma.sale.findMany({
+      where: { farmId, date: { gte: start } },
+      select: { date: true, net: true },
+    }),
+  ])
+
+  const buckets = Array.from({ length: months }, (_, i) => {
+    const d = new Date(start.getFullYear(), start.getMonth() + i, 1)
+    return {
+      key: `${d.getFullYear()}-${d.getMonth()}`,
+      month: d.toLocaleString('en-IN', { month: 'short' }),
+      spent: 0,
+      earned: 0,
+    }
+  })
+  const slot = new Map(buckets.map((b, i) => [b.key, i]))
+  const put = (date: Date, field: 'spent' | 'earned', value: number) => {
+    const i = slot.get(`${date.getFullYear()}-${date.getMonth()}`)
+    if (i != null) buckets[i][field] += value
+  }
+  for (const e of expenses) put(e.date, 'spent', e.amount)
+  for (const s of sales) put(s.date, 'earned', s.net)
+
+  return buckets.map(({ month, spent, earned }) => ({ month, spent, earned }))
+}
+
 export async function expenseBreakdown(plotId: string) {
   const rows = await prisma.expense.groupBy({
     by: ['category'],

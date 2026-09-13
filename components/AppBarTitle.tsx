@@ -18,18 +18,30 @@ function titleFor(path: string) {
   if (path === '/app/farms' || path === '/app/farms/') return 'Farms'
   if (path.match(/^\/app\/farms\/[^/]+$/)) return 'Farm'
   if (path.startsWith('/app/settings')) return 'Settings'
+  if (path.startsWith('/app/profile')) return 'Your profile'
   if (path.startsWith('/app/compare')) return 'Season comparison'
   if (path.startsWith('/app/assistant')) return 'Assistant'
   const match = nav.find((item) => path === item.href || (item.href !== '/app/dashboard' && path.startsWith(item.href)))
-  return match?.label ?? 'FarmOS'
+  return match?.label ?? 'Cattlemart One'
 }
 
-export function AppBarTitle({ farmName }: { farmName?: string | null }) {
-  const path = usePathname()
+export function AppBarTitle({
+  farmName,
+  farms = [],
+  currentId,
+}: {
+  farmName?: string | null
+  farms?: { id: string; name: string }[]
+  currentId?: string
+}) {
+  const path = usePathname() ?? ''
+  const fromUrl = path.match(/^\/app\/farms\/([^/]+)/)?.[1]
+  const selected =
+    farms.find((f) => f.id === fromUrl)?.name ?? farms.find((f) => f.id === currentId)?.name ?? farmName
   return (
     <div>
-      <p className="text-xs text-muted-foreground">{farmName || 'FarmOS'}</p>
-      <h1 className="text-lg font-semibold tracking-tight">{titleFor(path ?? '')}</h1>
+      <p className="text-xs text-muted-foreground">{selected || 'Cattlemart One'}</p>
+      <h1 className="text-lg font-semibold tracking-tight">{titleFor(path)}</h1>
     </div>
   )
 }

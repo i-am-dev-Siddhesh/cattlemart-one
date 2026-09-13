@@ -7,7 +7,13 @@ import { Input } from '@/components/ui/input'
 
 type Hit = { label: string; lat: number; lng: number; bbox?: number[] }
 
-export function MapSearchControl({ onPick }: { onPick?: (hit: Hit) => void }) {
+export function MapSearchControl({
+  onPick,
+  farmMark,
+}: {
+  onPick?: (hit: Hit) => void
+  farmMark?: { lat: number; lng: number; label?: string } | null
+}) {
   const map = useMap()
   const [q, setQ] = useState('')
   const [hits, setHits] = useState<Hit[]>([])
@@ -95,6 +101,10 @@ export function MapSearchControl({ onPick }: { onPick?: (hit: Hit) => void }) {
       {picked ? (
         <CircleMarker center={[picked.lat, picked.lng]} radius={8} pathOptions={{ color: '#635bff', fillOpacity: 0.9 }}>
           <Tooltip permanent>{picked.label.split(',')[0]}</Tooltip>
+        </CircleMarker>
+      ) : farmMark ? (
+        <CircleMarker center={[farmMark.lat, farmMark.lng]} radius={8} pathOptions={{ color: '#635bff', fillOpacity: 0.9 }}>
+          <Tooltip permanent>{farmMark.label || 'Farm'}</Tooltip>
         </CircleMarker>
       ) : null}
     </>

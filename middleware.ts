@@ -13,9 +13,7 @@ export function middleware(req: NextRequest) {
   const isApp = req.nextUrl.pathname.startsWith('/app')
   const loggedIn = hasSession(req)
   if (isApp && !loggedIn) {
-    const url = new URL('/login', req.nextUrl.origin)
-    url.searchParams.set('next', req.nextUrl.pathname)
-    return NextResponse.redirect(url)
+    return NextResponse.redirect(new URL('/login', req.nextUrl.origin))
   }
   if (req.nextUrl.pathname === '/login' && loggedIn) {
     return NextResponse.redirect(new URL('/app/dashboard', req.nextUrl.origin))

@@ -1,7 +1,9 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { Loader2 } from 'lucide-react'
 import { assistantConfirmAction } from '@/lib/actions'
+import { useFeedback } from '@/components/feedback'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -9,6 +11,7 @@ import { Input } from '@/components/ui/input'
 export function AssistantClient({ farmId }: { farmId: string }) {
   const [log, setLog] = useState<{ role: 'user' | 'farm'; text: string }[]>([])
   const [pending, start] = useTransition()
+  const { run } = useFeedback()
 
   return (
     <div className="space-y-4">
@@ -18,7 +21,7 @@ export function AssistantClient({ farmId }: { farmId: string }) {
         ) : null}
         {log.map((m, i) => (
           <p key={i} className={m.role === 'user' ? 'font-medium' : 'whitespace-pre-wrap text-muted-foreground'}>
-            {m.role === 'user' ? 'You · ' : 'FarmOS · '}
+            {m.role === 'user' ? 'You · ' : 'Cattlemart One · '}
             {m.text}
           </p>
         ))}
@@ -32,7 +35,11 @@ export function AssistantClient({ farmId }: { farmId: string }) {
           if (!text) return
           e.currentTarget.reset()
           start(async () => {
-            const result = await assistantConfirmAction(farmId, text)
+            const res = await run(() => assistantConfirmAction(farmId, text), {
+              ok: 'Cattlemart One replied',
+            })
+            if (!res.ok) return
+            const result = res.data
             let reply = ''
             if ('answer' in result && result.answer) reply = result.answer
             else if ('error' in result && result.error) reply = String(result.error)
@@ -45,7 +52,15 @@ export function AssistantClient({ farmId }: { farmId: string }) {
         }}
       >
         <Input name="q" className="flex-1" placeholder="Spent 4500 rupees on NPK for plot 2 today." />
-        <Button disabled={pending}>{pending ? '…' : 'Send'}</Button>
+        <Button disabled={pending}>
+          {pending ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" /> Sending…
+            </>
+          ) : (
+            'Send'
+          )}
+        </Button>
       </form>
     </div>
   )

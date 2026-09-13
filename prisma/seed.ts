@@ -79,7 +79,9 @@ async function main() {
           { lat: 20.0868, lng: 74.1064 },
         ]),
       ),
-      season: 'Kharif 2026',
+      season: 'Kharif',
+      startDate: new Date('2026-06-01'),
+      endDate: new Date('2026-10-31'),
       year: 2026,
       notes: 'DEMO DATA — not a live farm ledger.',
     },
@@ -540,7 +542,7 @@ async function main() {
   })
 
   console.log('Seeded Green Valley Farm (demo)')
-  console.log('Login: ramesh@greenvalley.farm / farmos-demo')
+  console.log('Seed finished. Use the owner account created by this script to sign in.')
 }
 
 main()

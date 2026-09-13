@@ -2,12 +2,12 @@ import Link from 'next/link'
 import { plotDetail } from '@/lib/queries'
 import { plantNewCycleAction } from '@/lib/actions'
 import { prisma } from '@/lib/prisma'
-import { Button } from '@/components/ui/button'
+import { ActionForm, SubmitButton } from '@/components/feedback'
 import { Card } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/empty'
 import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import { Select } from '@/components/ui/select'
+import { CropPicker } from '@/components/CropPicker'
 import { format } from 'date-fns'
 import { cyclePeriod } from '@/lib/cycle-span'
 
@@ -71,7 +71,8 @@ export default async function PlotCrop({ params }: { params: Promise<{ farmId: s
         <p className="mt-1 text-sm text-muted-foreground">
           Set start and end dates. Length is stored in months. Open cycles are marked completed. History is never deleted.
         </p>
-        <form
+        <ActionForm
+          ok="Crop cycle planted"
           action={async (fd) => {
             'use server'
             await plantNewCycleAction({
@@ -85,13 +86,7 @@ export default async function PlotCrop({ params }: { params: Promise<{ farmId: s
           className="mt-4 grid gap-4 sm:grid-cols-3"
         >
           <Field label="Crop">
-            <Select name="cropId" required>
-              {crops.map((crop) => (
-                <option key={crop.id} value={crop.id}>
-                  {crop.name}
-                </option>
-              ))}
-            </Select>
+            <CropPicker farmId={farmId} crops={crops} defaultValue={crops[0]?.id} />
           </Field>
           <Field label="Start date" hint="Planting / cycle start">
             <Input name="startDate" type="date" required defaultValue={startDefault} />
@@ -100,9 +95,9 @@ export default async function PlotCrop({ params }: { params: Promise<{ farmId: s
             <Input name="endDate" type="date" required defaultValue={endDefaultStr} />
           </Field>
           <div className="sm:col-span-3">
-            <Button type="submit">Create crop cycle</Button>
+            <SubmitButton pendingLabel="Planting…">Create crop cycle</SubmitButton>
           </div>
-        </form>
+        </ActionForm>
       </Card>
     </div>
   )

@@ -5,13 +5,13 @@ import { searchFarm } from '@/lib/queries'
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const farmId = searchParams.get('farmId')
-  const q = searchParams.get('q') ?? ''
+  const q = (searchParams.get('q') ?? '').slice(0, 80)
   if (!farmId) return NextResponse.json({ error: 'farmId required' }, { status: 400 })
   try {
     await requireFarm(farmId)
     const data = await searchFarm(farmId, q)
-    return NextResponse.json(data)
-  } catch (e) {
-    return NextResponse.json({ error: e instanceof Error ? e.message : 'Search failed' }, { status: 401 })
+    return NextResponse.json(data, { headers: { 'Cache-Control': 'no-store' } })
+  } catch {
+    return NextResponse.json({ error: 'Sign in required.' }, { status: 401 })
   }
 }

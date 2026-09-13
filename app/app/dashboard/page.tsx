@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/empty'
 import { WorkspaceDashboard } from '@/components/WorkspaceDashboard'
 import Link from 'next/link'
-import { cyclePeriod } from '@/lib/cycle-span'
+import { cycleEnd, cyclePeriod, cycleStart } from '@/lib/cycle-span'
+import { isoDay } from '@/lib/farm-season'
 
 export default async function DashboardPage() {
   const ctx = await currentFarm()
@@ -28,11 +29,24 @@ export default async function DashboardPage() {
     <WorkspaceDashboard
       farmId={d.farm.id}
       farmName={d.farm.name}
-      season={d.farm.season}
       area={d.area}
       activePlots={d.plots.filter((p) => p.status !== 'fallow').length}
       totalPlots={d.plots.length}
       finance={d.finance}
+      categorySpend={d.finance.byCategory}
+      monthly={d.monthly}
+      health={{
+        counts: d.health.counts,
+        rows: d.health.issues.map((i) => ({
+          id: i.id,
+          plotId: i.plotId,
+          plotName: i.plotName,
+          date: i.date.toISOString(),
+          kind: i.kind,
+          name: i.name,
+          level: i.level,
+        })),
+      }}
       plotCards={d.plotCards.map(({ plot, money, cycle }) => ({
         plot: {
           id: plot.id,
@@ -44,7 +58,14 @@ export default async function DashboardPage() {
         },
         money,
         cycle: cycle
-          ? { crop: { name: cycle.crop.name }, status: cycle.status, year: cycle.year, season: cyclePeriod(cycle) }
+          ? {
+              crop: { id: cycle.crop.id, name: cycle.crop.name },
+              status: cycle.status,
+              year: cycle.year,
+              season: cyclePeriod(cycle),
+              start: dayIso(cycleStart(cycle)),
+              end: dayIso(cycleEnd(cycle)),
+            }
           : null,
       }))}
       activities={d.recentActs.map((a) => ({
@@ -67,16 +88,8 @@ export default async function DashboardPage() {
         date: s.date.toISOString(),
         plotId: s.plotId,
         plotName: s.plot?.name ?? 'Farm',
-        label: `${s.quantity} ${s.unit}`,
+        label: `${s.cropCycle?.crop.name ?? s.notes?.split(' · ')[0] ?? 'Crop'} · ${s.quantity} ${s.unit}`,
         amount: s.net,
-      }))}
-      labour={d.labour.map((l) => ({
-        id: l.id,
-        date: l.date.toISOString(),
-        plotId: l.plotId,
-        plotName: l.plot?.name ?? 'Farm',
-        label: `${l.workers} workers`,
-        amount: l.cost,
       }))}
       cycles={d.allCycles.map((c) => ({
         id: c.id,
@@ -92,4 +105,8 @@ export default async function DashboardPage() {
       farmGeoJson={d.farm.geoJson}
     />
   )
+}
+
+function dayIso(day: Date | null) {
+  return day ? isoDay(day) : null
 }

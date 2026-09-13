@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
-import { cycleFinance, farmFinance, monthFinance, plotFinance } from '@/lib/services/finance'
+import { cycleFinance, farmFinance, monthFinance, monthlyMoney, plotFinance } from '@/lib/services/finance'
+import { farmHealth } from '@/lib/services/health'
 
 export async function dashboardData(farmId: string) {
   const farm = await prisma.farm.findUniqueOrThrow({ where: { id: farmId } })
@@ -13,10 +14,26 @@ export async function dashboardData(farmId: string) {
   const todayEnd = new Date(todayStart)
   todayEnd.setDate(todayEnd.getDate() + 1)
 
-  const [finance, month, todayActs, recentActs, allCycles, tasks, harvests, alerts, inventory, expenses, sales, labour] =
-    await Promise.all([
+  const [
+    finance,
+    month,
+    monthly,
+    health,
+    todayActs,
+    recentActs,
+    allCycles,
+    tasks,
+    harvests,
+    alerts,
+    inventory,
+    expenses,
+    sales,
+    labour,
+  ] = await Promise.all([
     farmFinance(farmId),
     monthFinance(farmId, new Date().getFullYear(), new Date().getMonth() + 1),
+    monthlyMoney(farmId, 6),
+    farmHealth(farmId),
     prisma.activity.findMany({
       where: { farmId, date: { gte: todayStart, lt: todayEnd } },
       include: { plot: true },
@@ -60,7 +77,7 @@ export async function dashboardData(farmId: string) {
     }),
     prisma.sale.findMany({
       where: { farmId },
-      include: { plot: true },
+      include: { plot: true, cropCycle: { include: { crop: true } } },
       orderBy: { date: 'desc' },
       take: 80,
     }),
@@ -86,6 +103,8 @@ export async function dashboardData(farmId: string) {
     cycles,
     finance,
     month,
+    monthly,
+    health,
     todayActs,
     recentActs,
     allCycles,

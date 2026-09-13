@@ -26,6 +26,7 @@ model User {
   name           String
   passwordHash   String
   role           String       @default("owner")
+  authEpoch      Int          @default(1)
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   memberships    FarmMember[]
@@ -47,7 +48,9 @@ model Farm {
   lat            Float?
   lng            Float?
   geoJson        String?
-  season         String       @default("Kharif 2026")
+  season         String       @default("Kharif")
+  startDate      DateTime?
+  endDate        DateTime?
   year           Int          @default(2026)
   currency       String       @default("INR")
   areaUnit       String       @default("acre")

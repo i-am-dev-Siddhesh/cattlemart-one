@@ -67,6 +67,7 @@ function edgeMid(a: LatLng, b: LatLng): LatLng {
 
 export function DraggableFarmBox({
   ring,
+  editable,
   onRing,
   onMoved,
   onVertex,
@@ -74,6 +75,7 @@ export function DraggableFarmBox({
   onEditStart,
 }: {
   ring: LatLng[]
+  editable: boolean
   onRing: (next: LatLng[]) => void
   onMoved: (next: LatLng[]) => void
   onVertex: (pt: LatLng) => void
@@ -175,6 +177,7 @@ export function DraggableFarmBox({
 
   useMapEvents({
     mousedown(e) {
+      if (!editable) return
       const vertex = nearestVertex(map, ringRef.current, e.latlng)
       if (vertex != null) {
         L.DomEvent.stop(e)
@@ -187,6 +190,7 @@ export function DraggableFarmBox({
       insertVertex(edge.insertAt, { lat: e.latlng.lat, lng: e.latlng.lng })
     },
     click(e) {
+      if (editable) return
       if (moved.current) {
         moved.current = false
         return
@@ -197,12 +201,14 @@ export function DraggableFarmBox({
       else onVertex(pt)
     },
     dblclick(e) {
+      if (!editable) return
       const vertex = nearestVertex(map, ringRef.current, e.latlng)
       if (vertex == null) return
       L.DomEvent.stop(e)
       deleteVertex(vertex)
     },
     contextmenu(e) {
+      if (!editable) return
       const vertex = nearestVertex(map, ringRef.current, e.latlng)
       if (vertex == null) return
       L.DomEvent.stop(e)
@@ -218,14 +224,16 @@ export function DraggableFarmBox({
       <Polygon
         positions={positions.length ? positions : [[0, 0] as LatLngExpression]}
         pathOptions={{
-          color: '#0a2540',
-          weight: 2,
+          color: '#fbbf24',
+          weight: 2.5,
           dashArray: '6 6',
-          fillOpacity: positions.length ? 0.08 : 0,
+          fillColor: '#fbbf24',
+          fillOpacity: positions.length ? 0.06 : 0,
           opacity: positions.length ? 1 : 0,
         }}
         eventHandlers={{
           mousedown: (e) => {
+            if (!editable) return
             if (nearestVertex(map, ringRef.current, e.latlng) != null) return
             if (nearestEdge(map, ringRef.current, e.latlng)) return
             e.originalEvent?.preventDefault()
@@ -241,9 +249,14 @@ export function DraggableFarmBox({
           },
         }}
       >
-        <Tooltip>Drag a numbered corner. Click + to add. Right-click or double-click a number to delete.</Tooltip>
+        <Tooltip>
+          {editable
+            ? 'Drag a numbered corner. Click + to add. Right-click or double-click a number to delete.'
+            : 'Saved farm boundary'}
+        </Tooltip>
       </Polygon>
-      {ring.map((p, i) => {
+      {editable
+        ? ring.map((p, i) => {
         const next = ring[(i + 1) % ring.length]
         return (
           <Marker
@@ -255,8 +268,9 @@ export function DraggableFarmBox({
             zIndexOffset={700}
           />
         )
-      })}
-      {ring.map((p, i) => (
+          })
+        : null}
+      {editable ? ring.map((p, i) => (
         <Marker
           key={`farm-corner-${i}`}
           position={[p.lat, p.lng]}
@@ -265,7 +279,7 @@ export function DraggableFarmBox({
           keyboard={false}
           zIndexOffset={800}
         />
-      ))}
+      )) : null}
     </>
   )
 }

@@ -56,7 +56,7 @@ export function DashboardPage() {
         </div>
         <div className="row">
           <Button kind="secondary" onClick={() => navigate('/assistant')}>
-            Ask FarmOS
+            Ask Cattlemart One
           </Button>
           <Button onClick={() => navigate('/map')}>Open farm map</Button>
         </div>

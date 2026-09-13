@@ -1,11 +1,13 @@
+import type { ReactNode } from 'react'
+
 export function PageHeader({
   title,
   hint,
   action,
 }: {
-  title: string
+  title: ReactNode
   hint?: string
-  action?: React.ReactNode
+  action?: ReactNode
 }) {
   return (
     <div className="flex flex-wrap items-end justify-between gap-3">

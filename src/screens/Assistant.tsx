@@ -12,7 +12,7 @@ export function AssistantPage() {
   const [log, setLog] = useState<Bubble[]>([
     {
       role: 'os',
-      text: 'FarmOS AI. I read this farm’s book only — no invented GPS, soil numbers, spray doses, or mandi prices. Try: “How many acres do I have?”, “What was grown on Plot A last year?”, “How much urea do I have?”, or “Today I spent ₹4500 on fertilizer for Plot A.”',
+      text: 'Cattlemart One AI. I read this farm’s book only — no invented GPS, soil numbers, spray doses, or mandi prices. Try: “How many acres do I have?”, “What was grown on Plot A last year?”, “How much urea do I have?”, or “Today I spent ₹4500 on fertilizer for Plot A.”',
     },
   ])
 
@@ -30,7 +30,7 @@ export function AssistantPage() {
     <div>
       <div className="topbar">
         <div>
-          <h2>FarmOS AI</h2>
+          <h2>Cattlemart One AI</h2>
           <p className="lede">
             Natural language into the chain: farm → plot → crop cycle → activity → cost → observation → harvest. Money
             and chemicals wait for yes.

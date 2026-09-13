@@ -1,11 +1,11 @@
 'use client'
 
-import { useEffect, useMemo, useRef } from 'react'
-import { MapContainer, Polygon, TileLayer, Tooltip, useMap } from 'react-leaflet'
+import { useEffect, useMemo, useState } from 'react'
+import { MapContainer, Polygon, Tooltip, useMap } from 'react-leaflet'
 import type { LatLngExpression } from 'leaflet'
 import { parseRingJson, type LatLng } from '@/lib/geo'
 import { MapSearchControl } from '@/components/MapSearchControl'
-import { MapReady, OSM_ATTR, OSM_TILES } from '@/components/MapReady'
+import { BaseLayers, BasemapToggle, MapReady, type Basemap } from '@/components/MapReady'
 
 type PlotLite = {
   id: string
@@ -22,14 +22,11 @@ function Fit({
   farmRing: LatLng[]
 }) {
   const map = useMap()
-  const done = useRef(false)
   useEffect(() => {
-    if (done.current) return
     const farm = farmRing.map((p) => [p.lat, p.lng] as [number, number])
     const flat = farm.length ? farm : (positions.flat() as [number, number][])
     if (!flat.length) return
     map.fitBounds(flat, { padding: [28, 28] })
-    done.current = true
   }, [map, positions, farmRing])
   return null
 }
@@ -57,44 +54,49 @@ export function PlotMap({
       })),
     [plots],
   )
+  const [basemap, setBasemap] = useState<Basemap>('satellite')
   return (
-    <MapContainer
-      center={center}
-      zoom={16}
-      className={className}
-      style={{ height: '100%', width: '100%', minHeight: 320 }}
-      scrollWheelZoom
-    >
-      <TileLayer attribution={OSM_ATTR} url={OSM_TILES} maxZoom={19} />
-      <MapReady />
-      <MapSearchControl />
-      <Fit positions={rings.map((r) => r.positions)} farmRing={farmRing} />
-      {farmRing.length >= 3 ? (
-        <Polygon
-          positions={farmRing.map((p) => [p.lat, p.lng] as LatLngExpression)}
-          pathOptions={{ color: '#0a2540', weight: 2, dashArray: '6 6', fillOpacity: 0.04 }}
-        >
-          <Tooltip>Farm boundary</Tooltip>
-        </Polygon>
-      ) : null}
-      {rings.map(({ plot, positions }) =>
-        positions.length ? (
+    <div className={`map-frame relative isolate z-0 overflow-hidden ${className}`}>
+      <MapContainer
+        center={center}
+        zoom={16}
+        className="h-full w-full rounded-xl"
+        style={{ height: '100%', width: '100%', minHeight: 320 }}
+        scrollWheelZoom
+      >
+        <BaseLayers mode={basemap} />
+        <MapReady />
+        <MapSearchControl farmMark={{ lat: center[0], lng: center[1], label: 'Farm' }} />
+        <Fit positions={rings.map((r) => r.positions)} farmRing={farmRing} />
+        {farmRing.length >= 3 ? (
           <Polygon
-            key={plot.id}
-            positions={positions}
-            pathOptions={{
-              color: plot.id === selectedId ? '#635bff' : '#93c5a8',
-              weight: plot.id === selectedId ? 3 : 1.5,
-              fillOpacity: plot.id === selectedId ? 0.45 : 0.28,
-            }}
-            eventHandlers={{
-              click: () => onSelect?.(plot.id),
-            }}
+            positions={farmRing.map((p) => [p.lat, p.lng] as LatLngExpression)}
+            pathOptions={{ color: '#ffffff', weight: 2, dashArray: '6 6', fillOpacity: 0.04 }}
           >
-            <Tooltip>{plot.name}</Tooltip>
+            <Tooltip>Farm boundary</Tooltip>
           </Polygon>
-        ) : null,
-      )}
-    </MapContainer>
+        ) : null}
+        {rings.map(({ plot, positions }) =>
+          positions.length ? (
+            <Polygon
+              key={plot.id}
+              positions={positions}
+              pathOptions={{
+                color: plot.id === selectedId ? '#ffd166' : '#ffffff',
+                weight: plot.id === selectedId ? 3 : 2,
+                fillColor: plot.id === selectedId ? '#ffd166' : '#7ee0a1',
+                fillOpacity: plot.id === selectedId ? 0.4 : 0.25,
+              }}
+              eventHandlers={{
+                click: () => onSelect?.(plot.id),
+              }}
+            >
+              <Tooltip>{plot.name}</Tooltip>
+            </Polygon>
+          ) : null,
+        )}
+      </MapContainer>
+      <BasemapToggle mode={basemap} onChange={setBasemap} />
+    </div>
   )
 }

@@ -1,6 +1,11 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { Loader2 } from 'lucide-react'
+import { useFeedback } from '@/components/feedback'
+import { Input } from '@/components/ui/input'
+import { Select } from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
 import {
   createActivityAction,
   createExpenseAction,
@@ -33,6 +38,7 @@ export function QuickAdd({ farmId, plots }: { farmId: string; plots: PlotOpt[] }
   const [open, setOpen] = useState(false)
   const [kind, setKind] = useState<string | null>(null)
   const [pending, start] = useTransition()
+  const { run } = useFeedback()
   const today = new Date().toISOString().slice(0, 10)
   const defaultPlot = plots[0]?.id ?? ''
 
@@ -51,7 +57,7 @@ export function QuickAdd({ farmId, plots }: { farmId: string; plots: PlotOpt[] }
         Quick Add
       </button>
       {open ? (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/30 p-4 sm:items-center">
+        <div className="fixed inset-0 z-[200] flex items-end justify-center bg-black/30 p-4 sm:items-center">
           <div className="surface max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl p-5 shadow-xl">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold">What do you want to record?</h2>
@@ -80,6 +86,7 @@ export function QuickAdd({ farmId, plots }: { farmId: string; plots: PlotOpt[] }
                   const fd = new FormData(e.currentTarget)
                   const plotId = String(fd.get('plotId') ?? defaultPlot)
                   start(async () => {
+                    const res = await run(async () => {
                     if (kind === 'activity' || kind === 'fertilizer' || kind === 'labour' || kind === 'machinery') {
                       await createActivityAction({
                         farmId,
@@ -154,7 +161,8 @@ export function QuickAdd({ farmId, plots }: { farmId: string; plots: PlotOpt[] }
                         dueDate: String(fd.get('dueDate') || ''),
                       })
                     }
-                    close()
+                    }, { ok: 'Saved' })
+                    if (res.ok) close()
                   })
                 }}
               >
@@ -166,23 +174,23 @@ export function QuickAdd({ farmId, plots }: { farmId: string; plots: PlotOpt[] }
                 {plots.length ? (
                   <label className="block">
                     Plot
-                    <select name="plotId" defaultValue={defaultPlot} className="control mt-1">
+                    <Select name="plotId" defaultValue={defaultPlot} className="mt-1.5">
                       {plots.map((p) => (
                         <option key={p.id} value={p.id}>
                           {p.name}
                         </option>
                       ))}
-                    </select>
+                    </Select>
                   </label>
                 ) : null}
                 <label className="block">
                   Date
-                  <input name="date" type="date" defaultValue={today} className="control mt-1" />
+                  <Input name="date" type="date" defaultValue={today} className="mt-1.5" />
                 </label>
                 {kind === 'activity' ? (
                   <label className="block">
                     Activity type
-                    <input name="type" required className="control mt-1" placeholder="Weeding" />
+                    <Input name="type" required className="mt-1.5" placeholder="Weeding" />
                   </label>
                 ) : null}
                 {kind === 'fertilizer' ? (
@@ -223,7 +231,7 @@ export function QuickAdd({ farmId, plots }: { farmId: string; plots: PlotOpt[] }
                       <input name="name" placeholder={kind === 'pest' ? 'Pest' : 'Disease'} className="control" />
                     ) : null}
                     <input name="severity" defaultValue="moderate" className="control" />
-                    <textarea name="note" required placeholder="What did you see?" className="control" />
+                    <Textarea name="note" required placeholder="What did you see?" />
                   </>
                 ) : null}
                 {kind === 'harvest' ? (
@@ -242,7 +250,7 @@ export function QuickAdd({ farmId, plots }: { farmId: string; plots: PlotOpt[] }
                 {kind === 'task' ? (
                   <>
                     <input name="title" required placeholder="Task title" className="control" />
-                    <input name="dueDate" type="date" className="control" />
+                    <Input name="dueDate" type="date" />
                   </>
                 ) : null}
                 <div className="flex gap-2 pt-2">
@@ -250,8 +258,14 @@ export function QuickAdd({ farmId, plots }: { farmId: string; plots: PlotOpt[] }
                     Back
                   </button>
                   {kind !== 'crop' ? (
-                    <button disabled={pending} className="inline-flex h-10 items-center rounded-lg bg-primary px-4 text-sm font-semibold text-white">
-                      {pending ? 'Saving…' : 'Save'}
+                    <button disabled={pending} className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-semibold text-white">
+                      {pending ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" /> Saving…
+                        </>
+                      ) : (
+                        'Save'
+                      )}
                     </button>
                   ) : null}
                 </div>

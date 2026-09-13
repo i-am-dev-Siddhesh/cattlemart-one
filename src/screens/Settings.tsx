@@ -21,7 +21,7 @@ export function SettingsPage() {
         <div>
           <h2>Settings</h2>
           <p className="lede">
-            English UI. Farmers may still type Hindi, Marathi, Tamil and other wording into the diary and FarmOS AI.
+            English UI. Farmers may still type Hindi, Marathi, Tamil and other wording into the diary and Cattlemart One AI.
             Structured fields stay English keys.
           </p>
         </div>

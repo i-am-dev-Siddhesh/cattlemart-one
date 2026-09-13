@@ -10,7 +10,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     ? await prisma.plot.findMany({ where: { farmId: ctx.farm.id }, orderBy: { code: 'asc' } })
     : []
   return (
-    <Shell farm={ctx.farm} farms={ctx.farms} plots={plots} userName={ctx.session.user.name ?? 'User'}>
+    <Shell
+      farm={ctx.farm}
+      farms={ctx.farms}
+      plots={plots}
+      userName={ctx.session.user.name ?? 'User'}
+      userEmail={ctx.session.user.email ?? undefined}
+      userRole={ctx.session.user.role}
+    >
       {children}
     </Shell>
   )

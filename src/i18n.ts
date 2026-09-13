@@ -1,12 +1,12 @@
 export const messages = {
   en: {
-      appName: 'FarmOS',
+      appName: 'Cattlemart One',
     appTag: 'Digital twin of the farm',
     nav: {
       dashboard: 'Dashboard',
       map: 'Farm Map',
       plots: 'Plots',
-      assistant: 'FarmOS AI',
+      assistant: 'Cattlemart One AI',
       ops: 'Operations',
       activities: 'Activities',
       crops: 'Crops',

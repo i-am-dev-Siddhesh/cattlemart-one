@@ -2,6 +2,7 @@ import { requirePlot } from '@/lib/access'
 import { plotDetail } from '@/lib/queries'
 import { Metric, StatusBadge } from '@/components/ui/empty'
 import { PlotTabs } from '@/components/PlotTabs'
+import { PlotActions } from '@/components/PlotActions'
 import { acres, inr } from '@/lib/utils'
 import { cyclePeriod } from '@/lib/cycle-span'
 import { differenceInCalendarDays } from 'date-fns'
@@ -31,7 +32,10 @@ export default async function PlotLayout({
             {acres(plot.acres)} · {current ? `${current.crop.name} · ${cyclePeriod(current)}` : 'Unplanted'}
           </p>
         </div>
-        <StatusBadge status={plot.status} />
+        <div className="flex flex-col items-end gap-2">
+          <StatusBadge status={plot.status} />
+          <PlotActions farmId={farmId} plotId={plotId} plotName={plot.name} after="plots" />
+        </div>
       </div>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Metric label="Area" value={acres(plot.acres)} />

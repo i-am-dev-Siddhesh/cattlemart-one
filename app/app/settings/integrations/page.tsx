@@ -7,8 +7,9 @@ export default function IntegrationsPage() {
       <PageHeader title="Integrations" />
       <Card>
         <p className="text-sm text-muted-foreground">
-          Mapbox, weather, and object storage are optional. This workspace uses OpenStreetMap and local SQLite so the
-          farm book runs without those services.
+          Mapbox and object storage are optional. Weather uses Open-Meteo with the farm boundary centre (or plot outlines /
+          map pin). No weather key is required. This workspace uses OpenStreetMap and local SQLite so the farm book can
+          run without paid map services.
         </p>
       </Card>
     </div>

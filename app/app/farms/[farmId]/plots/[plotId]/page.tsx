@@ -9,7 +9,7 @@ import { Table, Td, Th } from '@/components/ui/table'
 import { PlotMapLazy } from '@/components/PlotMapLazy'
 import { acres, inr } from '@/lib/utils'
 import { cyclePeriod } from '@/lib/cycle-span'
-import { farmWorkingRing } from '@/lib/geo'
+import { farmCenter, farmWorkingRing } from '@/lib/geo'
 
 export default async function PlotOverview({
   params,
@@ -132,10 +132,10 @@ export default async function PlotOverview({
           </Table>
         </Card>
       ) : null}
-      <div className="h-[360px] overflow-hidden rounded-xl border border-border">
+      <div className="map-frame relative isolate z-0 h-[min(56vh,360px)] overflow-hidden rounded-xl border border-border">
         <PlotMapLazy
           plots={[plot]}
-          center={[plot.farm.lat ?? 20.08, plot.farm.lng ?? 74.11]}
+          center={farmCenter(plot.farm, [plot])}
           selectedId={plot.id}
           farmRing={farmWorkingRing(plot.farm, [plot])}
         />

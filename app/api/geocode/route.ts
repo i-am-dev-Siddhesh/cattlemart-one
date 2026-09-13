@@ -7,6 +7,7 @@ export async function GET(req: NextRequest) {
 
   const q = req.nextUrl.searchParams.get('q')?.trim() ?? ''
   if (q.length < 2) return NextResponse.json([])
+  if (q.length > 80) return NextResponse.json({ error: 'Search is too long.' }, { status: 400 })
 
   const url = new URL('https://nominatim.openstreetmap.org/search')
   url.searchParams.set('format', 'jsonv2')
@@ -17,7 +18,7 @@ export async function GET(req: NextRequest) {
 
   const res = await fetch(url, {
     headers: {
-      'User-Agent': 'FarmOS/1.0 (farm map location search)',
+      'User-Agent': 'CattlemartOne/1.0 (farm map location search)',
       'Accept-Language': 'en-IN,en',
     },
     next: { revalidate: 120 },
@@ -26,11 +27,14 @@ export async function GET(req: NextRequest) {
 
   const rows = (await res.json()) as { display_name: string; lat: string; lon: string; boundingbox?: string[] }[]
   return NextResponse.json(
-    rows.map((r) => ({
-      label: r.display_name,
-      lat: Number(r.lat),
-      lng: Number(r.lon),
-      bbox: r.boundingbox?.map(Number),
-    })),
+    Array.isArray(rows)
+      ? rows.slice(0, 6).map((r) => ({
+          label: r.display_name,
+          lat: Number(r.lat),
+          lng: Number(r.lon),
+          bbox: r.boundingbox?.map(Number),
+        }))
+      : [],
+    { headers: { 'Cache-Control': 'private, max-age=120' } },
   )
 }
