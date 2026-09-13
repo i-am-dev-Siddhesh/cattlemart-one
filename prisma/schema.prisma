@@ -2,9 +2,8 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// Models are PostgreSQL-ready. Local default is SQLite (DATABASE_URL=file:./dev.db).
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
